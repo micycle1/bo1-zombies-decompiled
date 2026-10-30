@@ -6,14 +6,10 @@
 # Without -GameDir the folder is taken from gamedir.txt (written by an earlier run), then looked up in Steam
 # (registry + library folders) and the usual install paths.
 #
-# Layout (build\Release is where the exe runs; fs_b and fs_h are both build\Release, as in the original game):
-#   zone\        junction to <install>\zone       the exe loads zone\ relative to its own folder (db_registry.cpp)
-#   main\video\  junction to <install>\main\video the movies load from <working folder>\main\video (r_cinematic.cpp)
-#   main\*.iwd   not linked: the game reads them from the install with +set fs_cdpath <install>
-#                (Play.bat, tools\mod-launcher.hta and tools\headless.ps1 pass it; the path comes from gamedir.txt)
-#   *.dll, localization.txt, codlogo.bmp   a few MB, copied
-# Junctions need no admin rights and work across NTFS drives. To undo: delete the two junctions with `rmdir <link>`
-# (never `Remove-Item -Recurse`, which can follow a link into the install) and delete gamedir.txt.
+# The game finds the install through +set fs_cdpath <install> (Play.bat, tools\mod-launcher.hta and tools\headless.ps1
+# pass it; the path comes from gamedir.txt): main\*.iwd, zone\ (the fastfiles) and main\video (the movies) are read from
+# there. Only what must sit next to the exe is put in build\Release: the DLLs, localization.txt and codlogo.bmp.
+# To undo: delete gamedir.txt (and build\Release if you like).
 param(
     [string]$GameDir = ''
 )
@@ -52,22 +48,13 @@ Set-Content -Path $cfg -Value $GameDir -Encoding ASCII
 $dst = Join-Path $PSScriptRoot 'build\Release'
 New-Item -ItemType Directory -Force (Join-Path $dst 'main') | Out-Null
 
-# $link -> $target. An existing junction to somewhere else is repointed; a real folder or file is never touched.
-function Set-Junction([string]$link, [string]$target) {
+# An earlier version of this script linked zone\ and main\video into build\Release with directory junctions. The game no
+# longer needs them; remove the links (only links: a real folder is left alone, and the game still prefers it).
+foreach ($j in 'zone', 'main\video') {
+    $link = Join-Path $dst $j
     $item = Get-Item $link -Force -ErrorAction SilentlyContinue
-    if ($item) {
-        if ($item.LinkType -ne 'Junction') {
-            throw "'$link' exists and is not a junction (a copy from an older setup.ps1?). Delete it yourself, then run setup.ps1 again."
-        }
-        if ((@($item.Target)[0]).TrimEnd('\') -ieq $target.TrimEnd('\')) { "ok       $link"; return }
-        [IO.Directory]::Delete($link)   # removes the link only, never the target's contents
-    }
-    New-Item -ItemType Junction -Path $link -Target $target | Out-Null
-    "junction $link -> $target"
+    if ($item -and $item.LinkType -eq 'Junction') { [IO.Directory]::Delete($link); "removed old junction $link" }
 }
-Set-Junction (Join-Path $dst 'zone') (Join-Path $GameDir 'zone')
-if (Test-Path (Join-Path $GameDir 'main\video')) { Set-Junction (Join-Path $dst 'main\video') (Join-Path $GameDir 'main\video') }
-else { 'note: no main\video in the install, so no movies' }
 
 # the engine's own DLLs (the exe is built against this Steam SDK and Bink)
 Copy-Item (Join-Path $PSScriptRoot 'src\binklib\binkw32.dll') $dst -Force

@@ -5,12 +5,12 @@
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { zoneRoot as defaultZoneRoot } from './zone-root.mjs';
 
 const map = process.argv[2] || 'zombie_pentagon';
 const filter = new RegExp(process.argv[3] || '.', 'i');
-// build/Release/zone: the junction to the install's zone folder that setup.ps1 makes
-const zoneRoot = fileURLToPath(new URL('../../build/Release/zone', import.meta.url));
+// the install's zone folder (see zone-root.mjs)
+const zoneRoot = defaultZoneRoot();
 let file = null;
 for (const dir of fs.readdirSync(zoneRoot)) {
     const p = path.join(zoneRoot, dir, map + '.ff');
