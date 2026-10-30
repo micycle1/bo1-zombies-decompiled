@@ -7,6 +7,7 @@
 #include <qcommon/threads.h>
 #include "rb_resource.h"
 #include "r_image_load_common.h"
+#include <universal/com_files.h>
 #include <universal/com_memory.h>
 #include <universal/com_workercmds.h>
 #include <sound/snd_public_async.h>
@@ -1429,24 +1430,38 @@ void __stdcall R_Cinematic_Bink_Free(void *ptr)
 bool __cdecl R_Cinematic_BinkOpen(const char *filename, char playbackFlags, char *errText, unsigned int errTextSize)
 {
     char *cwd; // [esp+4h] [ebp-20Ch]
-    char filepath[2][256]; // [esp+8h] [ebp-208h] BYREF
+    char filepath[4][256]; // [esp+8h] [ebp-208h] BYREF
+    int pathCount;
+    int i;
 
     cwd = Sys_Cwd();
     if ( !cwd && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\gfx_d3d\\r_cinematic.cpp", 2479, 0, "%s", "cwd") )
         __debugbreak();
-    filepath[1][0] = 0;
     if ( (playbackFlags & 8) != 0 )
     {
         _snprintf(filepath[0], 0x100u, "bik/%s.%s", filename, "bik");
+        pathCount = 1;
     }
     else
     {
         _snprintf(filepath[0], 0x100u, "%s\\main\\video\\%s.%s", cwd, filename, "bik");
         _snprintf(filepath[1], 0x100u, "%s\\raw\\video\\%s.%s", cwd, filename, "bik");
+        pathCount = 2;
+        // not in the working folder: the game install, fs_cdpath (setup.ps1 records it), so the build folder needs
+        // no copy or link of the game's main\video folder
+        if ( fs_cdpath && *fs_cdpath->current.string )
+        {
+            _snprintf(filepath[2], 0x100u, "%s\\main\\video\\%s.%s", fs_cdpath->current.string, filename, "bik");
+            _snprintf(filepath[3], 0x100u, "%s\\raw\\video\\%s.%s", fs_cdpath->current.string, filename, "bik");
+            pathCount = 4;
+        }
     }
-    if ( R_Cinematic_BinkOpenPath(filepath[0], playbackFlags, errText, errTextSize) )
-        return 1;
-    return filepath[1][0] && R_Cinematic_BinkOpenPath(filepath[1], playbackFlags, errText, errTextSize);
+    for ( i = 0; i < pathCount; ++i )
+    {
+        if ( R_Cinematic_BinkOpenPath(filepath[i], playbackFlags, errText, errTextSize) )
+            return 1;
+    }
+    return 0;
 }
 
 char __cdecl R_Cinematic_BinkOpenPath(
