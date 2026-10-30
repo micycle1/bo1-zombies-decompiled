@@ -19,6 +19,18 @@ set_source_files_properties(
     COMPILE_OPTIONS "/arch:IA32"
 )
 
+# MSVC 19.43 (VS 2022 17.13) crashes in c2.dll (access violation, fault offset 0x56aa6, "Generating Code...") when
+# optimizing rb_draw3d.cpp; 19.44 (17.14) compiles it fine. Older toolsets get /Od for that file, the rest keeps /O2.
+# Paths are under src/.
+if(MSVC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.44)
+    set(NO_OPT_SOURCES
+        gfx_d3d/rb_draw3d.cpp
+    )
+    foreach(f ${NO_OPT_SOURCES})
+        set_source_files_properties("${SRC_DIR}/${f}" PROPERTIES COMPILE_OPTIONS "/Od")
+    endforeach()
+endif()
+
 # ----- Preprocessor Defines -----
 # Common to both Debug and Release
 target_compile_definitions(BO1Zombies PUBLIC
@@ -103,7 +115,6 @@ target_link_options(BO1Zombies PRIVATE /machine:x86)
 target_link_options(BO1Zombies PRIVATE /DYNAMICBASE:NO /LARGEADDRESSAWARE /DEBUG)
 
 set_target_properties(BO1Zombies PROPERTIES WIN32_EXECUTABLE TRUE)
-
 # Set the VS debugger's working directory to the build-output dir for whichever config is active 
 set_target_properties(BO1Zombies PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"

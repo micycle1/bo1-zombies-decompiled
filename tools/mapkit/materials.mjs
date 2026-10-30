@@ -5,10 +5,12 @@
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const map = process.argv[2] || 'zombie_pentagon';
 const filter = new RegExp(process.argv[3] || '.', 'i');
-const zoneRoot = 'C:/Program Files (x86)/Steam/steamapps/common/Call of Duty Black Ops/zone';
+// build/Release/zone: the junction to the install's zone folder that setup.ps1 makes
+const zoneRoot = fileURLToPath(new URL('../../build/Release/zone', import.meta.url));
 let file = null;
 for (const dir of fs.readdirSync(zoneRoot)) {
     const p = path.join(zoneRoot, dir, map + '.ff');
