@@ -20,7 +20,8 @@ The build copies `mods\` next to the exe (`build\Release\mods\horde\`). In Power
 ```powershell
 cd build\Release
 $R = (Get-Location).Path
-.\BO1Zombies.exe +set fs_b $R +set fs_h $R +set r_fullscreen 0 +set bo1_zombies 1 +set fs_game mods/horde +set fs_mods horde zinfo +set bo1_mod_maxactors 64 +set horde_max_zombies 48 +devmap zombie_pentagon
+$G = (Get-Content ..\..\gamedir.txt -TotalCount 1).Trim()   # your Black Ops install, recorded by setup.ps1
+.\BO1Zombies.exe +set fs_b $R +set fs_h $R +set fs_cdpath $G +set r_fullscreen 0 +set bo1_zombies 1 +set fs_game mods/horde +set fs_mods horde zinfo +set bo1_mod_maxactors 64 +set horde_max_zombies 48 +devmap zombie_pentagon
 ```
 
 ## More than 32 zombies

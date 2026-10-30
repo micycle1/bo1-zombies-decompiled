@@ -3,5 +3,7 @@ rem Black Ops 1 Zombies: the original game. Opens at its own main menu: Zombies,
 rem (Mods: tools\mod-launcher.hta, see README.md.)
 set "GAME=%~dp0build\Release"
 if not exist "%GAME%\BO1Zombies.exe" (echo Game not found in %GAME% & pause & exit /b 1)
+if not exist "%~dp0gamedir.txt" (echo Run setup.ps1 first: it records where your Black Ops install is. & pause & exit /b 1)
+set /p BO1_INSTALL=<"%~dp0gamedir.txt"
 cd /d "%GAME%"
-start "" "%GAME%\BO1Zombies.exe" +set bo1_zombies 1 +set fs_b "%GAME%" +set fs_h "%GAME%" +set logfile 2 +set net_ip 127.0.0.1 +set r_fullscreen 0 +set r_borderless 1 +set vid_xpos 0 +set vid_ypos 0
+start "" "%GAME%\BO1Zombies.exe" +set bo1_zombies 1 +set fs_b "%GAME%" +set fs_h "%GAME%" +set fs_cdpath "%BO1_INSTALL%" +set logfile 2 +set net_ip 127.0.0.1 +set r_fullscreen 0 +set r_borderless 1 +set vid_xpos 0 +set vid_ypos 0
